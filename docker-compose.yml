@@ -1,0 +1,59 @@
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+
+services:
+  database-service:
+    build: ./database-service
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  health-check-service:
+    build: ./health-check-service
+    container_name: health-check-service
+    ports:
+      - "8081:8080"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_SERVICE_URL=${DATABASE_SERVICE_URL}
+    networks:
+      - app-network
+    depends_on:
+      - database-service
+      
+  logging-service:
+    build: ./logging-service
+    container_name: logging-service
+    ports:
+      - "8083:8080"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_SERVICE_URL=${DATABASE_SERVICE_URL}
+    networks:
+      - app-network
+
+  db:
+    image: postgres:17
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=dchoi
+      - POSTGRES_DB=dchoi
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
